@@ -1,0 +1,54 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+type Movie {
+  id: ID!
+  name: String!
+  image: String
+  qoutes: [Qoute!]
+}
+
+type Qoute {
+  id: ID!
+  text: String!
+  movie: Movie
+}
+
+type Meme {
+  id: ID!
+  image: String!
+  movie: Movie
+}
+
+type Query {
+  movies: [Movie]!
+  memes: [Meme]!
+  qoutes: [Qoute]!
+
+  movie(id: ID!): Movie
+  qoute(id: ID!): Qoute
+  meme(id: ID!): Meme
+}
+
+input NewMovie {
+  name: String!
+  image: String
+}
+
+input NewMeme {
+  image: String!
+  movieId: String
+}
+
+input NewQoute {
+  text: String!
+  movieId: String!
+}
+
+
+type Mutation {
+  createMovie(input: NewMovie!): Movie!
+  createMeme(input: NewMeme!): Meme!
+  createQoute(input: NewQoute!): Qoute!
+}
