@@ -85,7 +85,10 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
-  Movies:
+  Movie:
+    model: github.com/ajm113/mah-graphql/graph/model.Movie
     fields:
       qoutes:
+        resolver: true
+      memes:
         resolver: true

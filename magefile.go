@@ -35,7 +35,7 @@ func Setup() {
 // Compiles developer executable on their host machine.
 func Build() error {
 	fmt.Println("Go generate...")
-	err := sh.RunV("go", "generate")
+	err := sh.RunV("go", "generate", "./...")
 	if err != nil {
 		return err
 	}

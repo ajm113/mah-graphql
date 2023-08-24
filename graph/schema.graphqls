@@ -7,6 +7,7 @@ type Movie {
   name: String!
   image: String
   qoutes: [Qoute!]
+  memes: [Meme!]
 }
 
 type Qoute {

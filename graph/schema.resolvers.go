@@ -13,6 +13,38 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Qoutes is the resolver for the qoutes field.
+func (r *movieResolver) Qoutes(ctx context.Context, obj *model.Movie) (qoutes []*model.Qoute, err error) {
+	qoutesdb := make([]*modeldb.Qoute, 0)
+	err = r.DB.NewSelect().Model(&qoutesdb).Where("movie_id=?", obj.ID).Scan(ctx)
+
+	if err != nil {
+		log.Error().Err(err).Msg("failed fetching qoutes")
+	}
+
+	for _, q := range qoutesdb {
+		qoutes = append(qoutes, q.ToModel())
+	}
+
+	return
+}
+
+// Memes is the resolver for the memes field.
+func (r *movieResolver) Memes(ctx context.Context, obj *model.Movie) (memes []*model.Meme, err error) {
+	memesdb := make([]*modeldb.Meme, 0)
+	err = r.DB.NewSelect().Model(&memesdb).Where("movie_id=?", obj.ID).Scan(ctx)
+
+	if err != nil {
+		log.Error().Err(err).Msg("failed fetching qoutes")
+	}
+
+	for _, m := range memesdb {
+		memes = append(memes, m.ToModel())
+	}
+
+	return
+}
+
 // CreateMovie is the resolver for the createMovie field.
 func (r *mutationResolver) CreateMovie(ctx context.Context, input model.NewMovie) (*model.Movie, error) {
 	movie := &modeldb.Movie{
@@ -166,11 +198,15 @@ func (r *queryResolver) Meme(ctx context.Context, id string) (*model.Meme, error
 	return memedb.ToModel(), nil
 }
 
+// Movie returns MovieResolver implementation.
+func (r *Resolver) Movie() MovieResolver { return &movieResolver{r} }
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type movieResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
