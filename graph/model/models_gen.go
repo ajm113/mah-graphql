@@ -2,6 +2,10 @@
 
 package model
 
+type SearchResult interface {
+	IsSearchResult()
+}
+
 type Meme struct {
 	ID    string `json:"id"`
 	Image string `json:"image"`
@@ -14,8 +18,9 @@ type NewMeme struct {
 }
 
 type NewMovie struct {
-	Name  string  `json:"name"`
-	Image *string `json:"image,omitempty"`
+	Name     string  `json:"name"`
+	Image    *string `json:"image,omitempty"`
+	SitCount *int    `json:"sitCount,omitempty"`
 }
 
 type NewQoute struct {
@@ -28,3 +33,5 @@ type Qoute struct {
 	Text  string `json:"text"`
 	Movie *Movie `json:"movie,omitempty"`
 }
+
+func (Qoute) IsSearchResult() {}

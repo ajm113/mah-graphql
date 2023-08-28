@@ -37,22 +37,25 @@ func (m *Meme) ToModel() *model.Meme {
 }
 
 type Movie struct {
-	ID    uuid.UUID
-	Name  string
-	Image *string
+	ID       uuid.UUID
+	Name     string
+	Image    *string
+	SitCount int
 }
 
 func (m *Movie) ToDB(x *model.Movie) {
 	m.ID = uuid.MustParse(x.ID)
 	m.Image = x.Image
 	m.Name = x.Name
+	m.SitCount = x.SitCount
 }
 
 func (m *Movie) ToModel() *model.Movie {
 	x := &model.Movie{
-		ID:    m.ID.String(),
-		Image: m.Image,
-		Name:  m.Name,
+		ID:       m.ID.String(),
+		Image:    m.Image,
+		Name:     m.Name,
+		SitCount: m.SitCount,
 	}
 	return x
 }

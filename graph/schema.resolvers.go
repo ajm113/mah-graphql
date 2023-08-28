@@ -53,6 +53,10 @@ func (r *mutationResolver) CreateMovie(ctx context.Context, input model.NewMovie
 		Image: input.Image,
 	}
 
+	if input.SitCount != nil {
+		movie.SitCount = *input.SitCount
+	}
+
 	_, err := r.DB.NewInsert().Model(movie).Exec(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("failed inserting movie")
@@ -196,6 +200,37 @@ func (r *queryResolver) Meme(ctx context.Context, id string) (*model.Meme, error
 	}
 
 	return memedb.ToModel(), nil
+}
+
+// Search is the resolver for the search field.
+func (r *queryResolver) Search(ctx context.Context, text string) ([]model.SearchResult, error) {
+	moviedb := []*modeldb.Movie{}
+	err := r.DB.NewSelect().Model(&moviedb).Where("name ILIKE ?", "%"+text+"%").Scan(ctx)
+
+	if err != nil {
+		log.Error().Err(err).Msg("failed fetching movies")
+		return nil, err
+	}
+
+	qoutedb := []*modeldb.Qoute{}
+	err = r.DB.NewSelect().Model(&qoutedb).Where("text ILIKE ?", "%"+text+"%").Scan(ctx)
+
+	if err != nil {
+		log.Error().Err(err).Msg("failed fetching qoutes")
+		return nil, err
+	}
+
+	results := []model.SearchResult{}
+
+	for _, i := range moviedb {
+		results = append(results, i.ToModel())
+	}
+
+	for _, i := range qoutedb {
+		results = append(results, i.ToModel())
+	}
+
+	return results, nil
 }
 
 // Movie returns MovieResolver implementation.

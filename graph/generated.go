@@ -53,11 +53,12 @@ type ComplexityRoot struct {
 	}
 
 	Movie struct {
-		ID     func(childComplexity int) int
-		Image  func(childComplexity int) int
-		Memes  func(childComplexity int) int
-		Name   func(childComplexity int) int
-		Qoutes func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Image    func(childComplexity int) int
+		Memes    func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Qoutes   func(childComplexity int) int
+		SitCount func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -79,6 +80,7 @@ type ComplexityRoot struct {
 		Movies func(childComplexity int) int
 		Qoute  func(childComplexity int, id string) int
 		Qoutes func(childComplexity int) int
+		Search func(childComplexity int, text string) int
 	}
 }
 
@@ -98,6 +100,7 @@ type QueryResolver interface {
 	Movie(ctx context.Context, id string) (*model.Movie, error)
 	Qoute(ctx context.Context, id string) (*model.Qoute, error)
 	Meme(ctx context.Context, id string) (*model.Meme, error)
+	Search(ctx context.Context, text string) ([]model.SearchResult, error)
 }
 
 type executableSchema struct {
@@ -170,6 +173,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Movie.Qoutes(childComplexity), true
+
+	case "Movie.sitCount":
+		if e.complexity.Movie.SitCount == nil {
+			break
+		}
+
+		return e.complexity.Movie.SitCount(childComplexity), true
 
 	case "Mutation.createMeme":
 		if e.complexity.Mutation.CreateMeme == nil {
@@ -284,6 +294,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Qoutes(childComplexity), true
+
+	case "Query.search":
+		if e.complexity.Query.Search == nil {
+			break
+		}
+
+		args, err := ec.field_Query_search_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Search(childComplexity, args["text"].(string)), true
 
 	}
 	return 0, false
@@ -517,6 +539,21 @@ func (ec *executionContext) field_Query_qoute_args(ctx context.Context, rawArgs 
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_search_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["text"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("text"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["text"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -685,6 +722,8 @@ func (ec *executionContext) fieldContext_Meme_movie(ctx context.Context, field g
 				return ec.fieldContext_Movie_name(ctx, field)
 			case "image":
 				return ec.fieldContext_Movie_image(ctx, field)
+			case "sitCount":
+				return ec.fieldContext_Movie_sitCount(ctx, field)
 			case "qoutes":
 				return ec.fieldContext_Movie_qoutes(ctx, field)
 			case "memes":
@@ -820,6 +859,47 @@ func (ec *executionContext) fieldContext_Movie_image(ctx context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Movie_sitCount(ctx context.Context, field graphql.CollectedField, obj *model.Movie) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Movie_sitCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SitCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalOInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Movie_sitCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Movie",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -968,6 +1048,8 @@ func (ec *executionContext) fieldContext_Mutation_createMovie(ctx context.Contex
 				return ec.fieldContext_Movie_name(ctx, field)
 			case "image":
 				return ec.fieldContext_Movie_image(ctx, field)
+			case "sitCount":
+				return ec.fieldContext_Movie_sitCount(ctx, field)
 			case "qoutes":
 				return ec.fieldContext_Movie_qoutes(ctx, field)
 			case "memes":
@@ -1246,6 +1328,8 @@ func (ec *executionContext) fieldContext_Qoute_movie(ctx context.Context, field 
 				return ec.fieldContext_Movie_name(ctx, field)
 			case "image":
 				return ec.fieldContext_Movie_image(ctx, field)
+			case "sitCount":
+				return ec.fieldContext_Movie_sitCount(ctx, field)
 			case "qoutes":
 				return ec.fieldContext_Movie_qoutes(ctx, field)
 			case "memes":
@@ -1302,6 +1386,8 @@ func (ec *executionContext) fieldContext_Query_movies(ctx context.Context, field
 				return ec.fieldContext_Movie_name(ctx, field)
 			case "image":
 				return ec.fieldContext_Movie_image(ctx, field)
+			case "sitCount":
+				return ec.fieldContext_Movie_sitCount(ctx, field)
 			case "qoutes":
 				return ec.fieldContext_Movie_qoutes(ctx, field)
 			case "memes":
@@ -1459,6 +1545,8 @@ func (ec *executionContext) fieldContext_Query_movie(ctx context.Context, field 
 				return ec.fieldContext_Movie_name(ctx, field)
 			case "image":
 				return ec.fieldContext_Movie_image(ctx, field)
+			case "sitCount":
+				return ec.fieldContext_Movie_sitCount(ctx, field)
 			case "qoutes":
 				return ec.fieldContext_Movie_qoutes(ctx, field)
 			case "memes":
@@ -1595,6 +1683,61 @@ func (ec *executionContext) fieldContext_Query_meme(ctx context.Context, field g
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_meme_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_search(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_search(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Search(rctx, fc.Args["text"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.SearchResult)
+	fc.Result = res
+	return ec.marshalNSearchResult2ᚕgithubᚗcomᚋajm113ᚋmahᚑgraphqlᚋgraphᚋmodelᚐSearchResultᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_search(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type SearchResult does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_search_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3548,7 +3691,7 @@ func (ec *executionContext) unmarshalInputNewMovie(ctx context.Context, obj inte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "image"}
+	fieldsInOrder := [...]string{"name", "image", "sitCount"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3573,6 +3716,15 @@ func (ec *executionContext) unmarshalInputNewMovie(ctx context.Context, obj inte
 				return it, err
 			}
 			it.Image = data
+		case "sitCount":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sitCount"))
+			data, err := ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SitCount = data
 		}
 	}
 
@@ -3620,6 +3772,29 @@ func (ec *executionContext) unmarshalInputNewQoute(ctx context.Context, obj inte
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
+
+func (ec *executionContext) _SearchResult(ctx context.Context, sel ast.SelectionSet, obj model.SearchResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.Movie:
+		return ec._Movie(ctx, sel, &obj)
+	case *model.Movie:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Movie(ctx, sel, obj)
+	case model.Qoute:
+		return ec._Qoute(ctx, sel, &obj)
+	case *model.Qoute:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Qoute(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
 
 // endregion ************************** interface.gotpl ***************************
 
@@ -3671,7 +3846,7 @@ func (ec *executionContext) _Meme(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
-var movieImplementors = []string{"Movie"}
+var movieImplementors = []string{"Movie", "SearchResult"}
 
 func (ec *executionContext) _Movie(ctx context.Context, sel ast.SelectionSet, obj *model.Movie) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, movieImplementors)
@@ -3694,6 +3869,8 @@ func (ec *executionContext) _Movie(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "image":
 			out.Values[i] = ec._Movie_image(ctx, field, obj)
+		case "sitCount":
+			out.Values[i] = ec._Movie_sitCount(ctx, field, obj)
 		case "qoutes":
 			field := field
 
@@ -3846,7 +4023,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
-var qouteImplementors = []string{"Qoute"}
+var qouteImplementors = []string{"Qoute", "SearchResult"}
 
 func (ec *executionContext) _Qoute(ctx context.Context, sel ast.SelectionSet, obj *model.Qoute) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, qouteImplementors)
@@ -4025,6 +4202,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_meme(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "search":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_search(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -4592,6 +4791,60 @@ func (ec *executionContext) marshalNQoute2ᚖgithubᚗcomᚋajm113ᚋmahᚑgraph
 	return ec._Qoute(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNSearchResult2githubᚗcomᚋajm113ᚋmahᚑgraphqlᚋgraphᚋmodelᚐSearchResult(ctx context.Context, sel ast.SelectionSet, v model.SearchResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SearchResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSearchResult2ᚕgithubᚗcomᚋajm113ᚋmahᚑgraphqlᚋgraphᚋmodelᚐSearchResultᚄ(ctx context.Context, sel ast.SelectionSet, v []model.SearchResult) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSearchResult2githubᚗcomᚋajm113ᚋmahᚑgraphqlᚋgraphᚋmodelᚐSearchResult(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4883,6 +5136,32 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	res := graphql.MarshalBoolean(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt(*v)
 	return res
 }
 
