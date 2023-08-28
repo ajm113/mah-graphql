@@ -5,11 +5,8 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
 	"path"
-	"time"
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
@@ -52,24 +49,7 @@ func Run() error {
 
 // Run Go and Ginkgo tests.
 func Test() error {
-	fmt.Println("Running go tests")
-
-	// Run stripe-mock
-	stripeMock := exec.Command("stripe-mock", "-http-port", "12111", "-https-port", "12112")
-	stripeMock.Stderr = os.Stderr
-	stripeMock.Stdout = os.Stdout
-	stripeMock.Start()
-
-	// Give stripe-mock a tiny bit of time to start.
-	time.Sleep(time.Millisecond * 200)
-
-	err := sh.RunV("go", "test", "-v", "./...")
-
-	if err := stripeMock.Process.Kill(); err != nil {
-		log.Fatal("failed to kill process: ", err)
-	}
-
-	return err
+	return sh.RunV("go", "test", "-v", "./...")
 }
 
 // Cleanup the code and display any typos and or linting errors.
